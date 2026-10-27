@@ -4,3 +4,14 @@ server:
 spring:
   application:
     name: price-parser
+
+parser:
+  timeout-seconds: 15
+  user-agent: "PriceParser/1.0"
+  # ссылки на книги на странице каталога Лабиринта
+  catalog-link-selector: "a.cover[href*=/books/]"
+
+logging:
+  level:
+    # на macOS Netty пишет ошибку про DNS, хотя всё работает
+    io.netty.resolver.dns.DnsServerAddressStreamProviders: "OFF"

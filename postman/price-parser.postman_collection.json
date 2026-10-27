@@ -1,0 +1,51 @@
+{
+  "info": {
+    "name": "Price Parser",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Книга в Лабиринте",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://www.labirint.ru/books/982366/\"\n}" },
+        "url": "http://localhost:8080/api/parse"
+      }
+    },
+    {
+      "name": "Ещё одна книга",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://www.labirint.ru/books/1032572/\"\n}" },
+        "url": "http://localhost:8080/api/parse"
+      }
+    },
+    {
+      "name": "Книга из book24",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/\"\n}" },
+        "url": "http://localhost:8080/api/parse"
+      }
+    },
+    {
+      "name": "Страница каталога (422)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://www.labirint.ru/genres/2529/\"\n}" },
+        "url": "http://localhost:8080/api/parse"
+      }
+    },
+    {
+      "name": "Все результаты",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8080/answer"
+      }
+    }
+  ]
+}
