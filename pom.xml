@@ -11,9 +11,9 @@
     </parent>
 
     <groupId>com.example</groupId>
-    <artifactId>price-parser</artifactId>
+    <artifactId>product-scraper</artifactId>
     <version>1.0.0</version>
-    <name>price-parser</name>
+    <name>product-scraper</name>
     <description>Парсер цен на товары</description>
 
     <properties>

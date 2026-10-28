@@ -1,4 +1,4 @@
-### Price Parser
+### Product Scraper
 
 Сервис на Spring Boot, который собирает данные о товарах по ссылкам: название, краткое описание, цену, валюту, наличие и дату публикации. Может использоваться как агрегатор цен.
 
@@ -23,7 +23,7 @@ mvnw.cmd spring-boot:run      # Windows
 
 ### Проверка
 
-Запросы можно отправить через curl (терминал в IDEA) или Postman. Для Postman есть готовая коллекция: `postman/price-parser.postman_collection.json` (File - Import).
+Запросы можно отправить через curl (терминал в IDEA) или Postman. Для Postman есть готовая коллекция: `postman/product-scraper.postman_collection.json` (File - Import).
 
 1. Отправить ссылку на книгу:
 
