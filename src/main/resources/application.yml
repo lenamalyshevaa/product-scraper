@@ -9,6 +9,8 @@ parser:
   timeout-seconds: 15
   user-agent: "ProductScraper/1.0"
   # ссылки на книги на странице каталога Лабиринта
+  # сколько потоков обрабатывают список ссылок
+  batch-threads: 4
   catalog-link-selector: "a.cover[href*=/books/]"
 
 logging:

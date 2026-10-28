@@ -14,6 +14,7 @@ public class Product {
     private String availability;
     private Instant publishedAt;
     private Instant parsedAt;
+    private String threadName;
 
     public Long getId() {
         return id;
@@ -85,5 +86,13 @@ public class Product {
 
     public void setParsedAt(Instant parsedAt) {
         this.parsedAt = parsedAt;
+    }
+
+    public String getThreadName() {
+        return threadName;
+    }
+
+    public void setThreadName(String threadName) {
+        this.threadName = threadName;
     }
 }

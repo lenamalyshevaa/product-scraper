@@ -34,6 +34,8 @@ public class ParseService {
         }
 
         product.setParsedAt(Instant.now());
+        // видно, какой поток обработал ссылку
+        product.setThreadName(Thread.currentThread().getName());
         return storage.save(product);
     }
 
