@@ -2,9 +2,13 @@ package com.example.priceparser.service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.example.priceparser.model.BatchResult;
 import com.example.priceparser.model.ParseError;
@@ -24,6 +28,9 @@ public class BatchParseService {
     @Value("${parser.batch-threads}")
     private int threadCount;
 
+    @Value("${parser.catalog-max-products}")
+    private int maxProductsFromCatalog;
+
     public BatchParseService(ParseService parseService) {
         this.parseService = parseService;
     }
@@ -31,16 +38,20 @@ public class BatchParseService {
     public BatchResult parseAll(List<String> urls) {
         long start = System.currentTimeMillis();
 
-        // общая очередь ссылок и общие списки результатов - их используют все потоки сразу
-        Queue<String> queue = new ConcurrentLinkedQueue<>(urls);
+        // всё, что ниже, используют все потоки сразу, поэтому только потокобезопасные коллекции
+        Set<String> seen = ConcurrentHashMap.newKeySet();
+        seen.addAll(urls);
+        Queue<String> queue = new ConcurrentLinkedQueue<>(seen);
+        AtomicInteger pending = new AtomicInteger(queue.size());
         List<Product> products = Collections.synchronizedList(new ArrayList<>());
         List<ParseError> errors = Collections.synchronizedList(new ArrayList<>());
+        Set<String> requestUrls = new HashSet<>(urls);
 
-        int count = Math.min(threadCount, urls.size());
         List<Thread> threads = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            Thread thread = new Thread(new ParseWorker(queue, parseService, products, errors),
-                    "batch-worker-" + (i + 1));
+        for (int i = 0; i < threadCount; i++) {
+            ParseWorker worker = new ParseWorker(queue, parseService, products, errors,
+                    requestUrls, seen, pending, maxProductsFromCatalog);
+            Thread thread = new Thread(worker, "batch-worker-" + (i + 1));
             threads.add(thread);
             thread.start();
         }
@@ -56,7 +67,7 @@ public class BatchParseService {
         }
 
         BatchResult result = new BatchResult();
-        result.setTotal(urls.size());
+        result.setTotal(products.size() + errors.size());
         result.setProducts(new ArrayList<>(products));
         result.setErrors(new ArrayList<>(errors));
         result.setSuccess(products.size());

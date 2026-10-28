@@ -8,8 +8,16 @@
       "name": "Книга в Лабиринте",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://www.labirint.ru/books/982366/\"\n}" },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://www.labirint.ru/books/982366/\"\n}"
+        },
         "url": "http://localhost:8080/api/parse"
       }
     },
@@ -17,8 +25,16 @@
       "name": "Ещё одна книга",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://www.labirint.ru/books/1032572/\"\n}" },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://www.labirint.ru/books/1032572/\"\n}"
+        },
         "url": "http://localhost:8080/api/parse"
       }
     },
@@ -26,8 +42,16 @@
       "name": "Книга из book24",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/\"\n}" },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/\"\n}"
+        },
         "url": "http://localhost:8080/api/parse"
       }
     },
@@ -35,9 +59,34 @@
       "name": "Страница каталога (422)",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://www.labirint.ru/genres/2529/\"\n}" },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://www.labirint.ru/genres/2529/\"\n}"
+        },
         "url": "http://localhost:8080/api/parse"
+      }
+    },
+    {
+      "name": "Несколько ссылок и каталог",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"urls\": [\n    \"https://www.labirint.ru/genres/2529/\",\n    \"https://www.labirint.ru/books/982366/\",\n    \"https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/\"\n  ]\n}"
+        },
+        "url": "http://localhost:8080/api/parse/batch"
       }
     },
     {

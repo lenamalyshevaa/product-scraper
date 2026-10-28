@@ -8,10 +8,12 @@ spring:
 parser:
   timeout-seconds: 15
   user-agent: "ProductScraper/1.0"
-  # ссылки на книги на странице каталога Лабиринта
   # сколько потоков обрабатывают список ссылок
   batch-threads: 4
+  # ссылки на книги на странице каталога Лабиринта
   catalog-link-selector: "a.cover[href*=/books/]"
+  # сколько книг брать с одной страницы каталога
+  catalog-max-products: 20
 
 logging:
   level:

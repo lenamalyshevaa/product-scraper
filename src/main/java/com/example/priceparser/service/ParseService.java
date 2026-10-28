@@ -28,7 +28,7 @@ public class ParseService {
             List<String> links = parser.findProductLinks(url, page.html());
             if (!links.isEmpty()) {
                 throw new NotProductException("Это страница каталога (" + links.size()
-                        + " ссылок на товары), нужна ссылка на товар");
+                        + " ссылок на товары), нужна ссылка на товар", links);
             }
             throw new NotProductException("На странице не найдена цена товара");
         }
