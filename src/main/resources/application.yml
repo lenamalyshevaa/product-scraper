@@ -14,6 +14,8 @@ parser:
   catalog-link-selector: "a.cover[href*=/books/]"
   # сколько книг брать с одной страницы каталога
   catalog-max-products: 20
+  # не больше стольких запросов к одному сайту одновременно (Semaphore)
+  max-requests-per-site: 3
   # пул потоков для фоновых задач /api/tasks
   pool-threads: 6
   pool-queue-size: 100

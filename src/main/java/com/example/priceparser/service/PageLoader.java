@@ -14,18 +14,33 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class PageLoader {
 
     private final WebClient webClient;
+    private final HostLimiter hostLimiter;
 
-    public PageLoader(WebClient webClient) {
+    public PageLoader(WebClient webClient, HostLimiter hostLimiter) {
         this.webClient = webClient;
+        this.hostLimiter = hostLimiter;
     }
 
     public LoadedPage load(String url) {
-        // block() ждёт ответ, нам здесь не нужна реактивность
-        ResponseEntity<String> response = webClient.get()
-                .uri(URI.create(url))
-                .retrieve()
-                .toEntity(String.class)
-                .block();
+        try {
+            hostLimiter.acquire(url);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Загрузка прервана");
+        }
+
+        ResponseEntity<String> response;
+        try {
+            // block() ждёт ответ, нам здесь не нужна реактивность
+            response = webClient.get()
+                    .uri(URI.create(url))
+                    .retrieve()
+                    .toEntity(String.class)
+                    .block();
+        } finally {
+            // отпускаем в finally, иначе при ошибке место для этого сайта не освободится
+            hostLimiter.release(url);
+        }
 
         if (response == null || response.getBody() == null) {
             throw new IllegalStateException("Пустой ответ от " + url);
