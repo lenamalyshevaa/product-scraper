@@ -14,6 +14,9 @@ parser:
   catalog-link-selector: "a.cover[href*=/books/]"
   # сколько книг брать с одной страницы каталога
   catalog-max-products: 20
+  # пул потоков для фоновых задач /api/tasks
+  pool-threads: 6
+  pool-queue-size: 100
   # журнал событий, его пишет отдельный поток-демон
   event-log-file: logs/parser-events.log
   # сюда дописываются все результаты, файл переживает перезапуск
