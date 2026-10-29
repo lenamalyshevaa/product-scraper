@@ -13,14 +13,28 @@ public class ParseService {
     private final PageLoader pageLoader;
     private final ProductPageParser parser;
     private final ProductStorage storage;
+    private final EventLog eventLog;
 
-    public ParseService(PageLoader pageLoader, ProductPageParser parser, ProductStorage storage) {
+    public ParseService(PageLoader pageLoader, ProductPageParser parser, ProductStorage storage, EventLog eventLog) {
         this.pageLoader = pageLoader;
         this.parser = parser;
         this.storage = storage;
+        this.eventLog = eventLog;
     }
 
     public Product parse(String url) {
+        eventLog.log("Загрузка " + url);
+        try {
+            Product product = parseAndSave(url);
+            eventLog.log("Готово " + url + ": " + product.getTitle() + ", " + product.getPrice() + " " + product.getCurrency());
+            return product;
+        } catch (RuntimeException e) {
+            eventLog.log("Ошибка " + url + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    private Product parseAndSave(String url) {
         PageLoader.LoadedPage page = pageLoader.load(url);
         Product product = parser.parse(url, page.html(), page.lastModified());
 

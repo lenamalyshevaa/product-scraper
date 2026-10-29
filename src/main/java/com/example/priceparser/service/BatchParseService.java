@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 public class BatchParseService {
 
     private final ParseService parseService;
+    private final EventLog eventLog;
 
     @Value("${parser.batch-threads}")
     private int threadCount;
@@ -31,12 +32,14 @@ public class BatchParseService {
     @Value("${parser.catalog-max-products}")
     private int maxProductsFromCatalog;
 
-    public BatchParseService(ParseService parseService) {
+    public BatchParseService(ParseService parseService, EventLog eventLog) {
         this.parseService = parseService;
+        this.eventLog = eventLog;
     }
 
     public BatchResult parseAll(List<String> urls) {
         long start = System.currentTimeMillis();
+        eventLog.log("Пакет из " + urls.size() + " ссылок, потоков: " + threadCount);
 
         // всё, что ниже, используют все потоки сразу, поэтому только потокобезопасные коллекции
         Set<String> seen = ConcurrentHashMap.newKeySet();
@@ -73,6 +76,8 @@ public class BatchParseService {
         result.setSuccess(products.size());
         result.setFailed(errors.size());
         result.setTimeMs(System.currentTimeMillis() - start);
+        eventLog.log("Пакет обработан за " + result.getTimeMs() + " мс: успешно " + result.getSuccess()
+                + ", ошибок " + result.getFailed());
         return result;
     }
 }
