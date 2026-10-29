@@ -51,7 +51,8 @@ class BatchParseServiceTest {
         ReflectionTestUtils.setField(parser, "catalogLinkSelector", "a.cover[href*=/books/]");
 
         EventLog eventLog = mock(EventLog.class);
-        ParseService parseService = new ParseService(pageLoader, parser, new ProductStorage(), eventLog);
+        ParseService parseService = new ParseService(pageLoader, parser, new ProductStorage(),
+                mock(ResultFileStorage.class), eventLog);
         batchParseService = new BatchParseService(parseService, eventLog);
         ReflectionTestUtils.setField(batchParseService, "threadCount", 4);
         ReflectionTestUtils.setField(batchParseService, "maxProductsFromCatalog", 20);

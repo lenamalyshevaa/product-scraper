@@ -19,7 +19,10 @@ import org.springframework.test.web.servlet.MockMvc;
 /**
  * Вместо настоящей загрузки страниц подставляем заглушку, чтобы тесты не ходили в интернет.
  */
-@SpringBootTest
+@SpringBootTest(properties = {
+        "parser.results-file=target/test-data/results.jsonl",
+        "parser.event-log-file=target/test-data/parser-events.log"
+})
 @AutoConfigureMockMvc
 class ProductControllerTest {
 

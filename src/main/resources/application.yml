@@ -16,6 +16,8 @@ parser:
   catalog-max-products: 20
   # журнал событий, его пишет отдельный поток-демон
   event-log-file: logs/parser-events.log
+  # сюда дописываются все результаты, файл переживает перезапуск
+  results-file: data/results.jsonl
 
 logging:
   level:

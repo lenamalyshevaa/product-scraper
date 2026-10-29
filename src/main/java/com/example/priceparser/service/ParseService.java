@@ -13,12 +13,15 @@ public class ParseService {
     private final PageLoader pageLoader;
     private final ProductPageParser parser;
     private final ProductStorage storage;
+    private final ResultFileStorage fileStorage;
     private final EventLog eventLog;
 
-    public ParseService(PageLoader pageLoader, ProductPageParser parser, ProductStorage storage, EventLog eventLog) {
+    public ParseService(PageLoader pageLoader, ProductPageParser parser, ProductStorage storage,
+                        ResultFileStorage fileStorage, EventLog eventLog) {
         this.pageLoader = pageLoader;
         this.parser = parser;
         this.storage = storage;
+        this.fileStorage = fileStorage;
         this.eventLog = eventLog;
     }
 
@@ -50,7 +53,9 @@ public class ParseService {
         product.setParsedAt(Instant.now());
         // видно, какой поток обработал ссылку
         product.setThreadName(Thread.currentThread().getName());
-        return storage.save(product);
+        storage.save(product);
+        fileStorage.append(product);
+        return product;
     }
 
     public List<Product> getAll() {
