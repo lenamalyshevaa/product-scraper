@@ -2,7 +2,9 @@ package com.example.priceparser.service;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -30,5 +32,16 @@ public class ProductStorage {
         // новые сверху
         result.sort(Comparator.comparing(Product::getParsedAt).reversed());
         return result;
+    }
+
+    /**
+     * Все ссылки, по которым уже нашлись товары, без повторов.
+     */
+    public Set<String> findAllUrls() {
+        Set<String> urls = new LinkedHashSet<>();
+        for (Product product : products) {
+            urls.add(product.getUrl());
+        }
+        return urls;
     }
 }

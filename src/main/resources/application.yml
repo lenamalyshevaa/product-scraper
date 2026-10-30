@@ -23,6 +23,11 @@ parser:
   event-log-file: logs/parser-events.log
   # сюда дописываются все результаты, файл переживает перезапуск
   results-file: data/results.jsonl
+  # повторный обход всех известных ссылок по расписанию
+  scheduler:
+    enabled: true
+    initial-delay-seconds: 60
+    interval-minutes: 10
 
 logging:
   level:
