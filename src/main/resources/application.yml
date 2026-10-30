@@ -26,8 +26,19 @@ parser:
   # повторный обход всех известных ссылок по расписанию
   scheduler:
     enabled: true
-    initial-delay-seconds: 60
+    # первый обход через 5 секунд после запуска
+    initial-delay-seconds: 5
     interval-minutes: 10
+    # с этих ссылок начинается первый обход, дальше к ним добавляются все ссылки из базы
+    seed-urls: >-
+      https://www.labirint.ru/books/982366/,
+      https://www.labirint.ru/books/1032572/,
+      https://www.labirint.ru/books/1020734/,
+      https://www.labirint.ru/books/1024699/,
+      https://www.labirint.ru/books/1011055/,
+      https://www.labirint.ru/books/1017443/,
+      https://www.labirint.ru/books/1017692/,
+      https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/
 
 logging:
   level:

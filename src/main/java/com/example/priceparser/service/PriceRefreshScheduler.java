@@ -48,6 +48,10 @@ public class PriceRefreshScheduler {
     @Value("${parser.scheduler.interval-minutes}")
     private int intervalMinutes;
 
+    // ссылки для первого обхода, чтобы сразу после запуска были данные
+    @Value("${parser.scheduler.seed-urls}")
+    private String[] seedUrls;
+
     public PriceRefreshScheduler(TaskService taskService, ProductStorage storage, EventLog eventLog) {
         this.taskService = taskService;
         this.storage = storage;
@@ -83,7 +87,13 @@ public class PriceRefreshScheduler {
             return lastTask;
         }
 
-        Set<String> urls = new LinkedHashSet<>(storage.findAllUrls());
+        Set<String> urls = new LinkedHashSet<>();
+        for (String url : seedUrls) {
+            if (!url.isBlank()) {
+                urls.add(url.trim());
+            }
+        }
+        urls.addAll(storage.findAllUrls());
         if (urls.isEmpty()) {
             eventLog.log("Обновлять нечего: ещё нет ни одного товара");
             return null;
