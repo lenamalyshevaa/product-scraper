@@ -19,7 +19,7 @@ IntelliJ IDEA: открыть папку проекта, открыть клас
 mvnw.cmd spring-boot:run      # Windows
 ```
 
-Сервис запускается на `http://localhost:8080`.
+Сервис запускается на `http://localhost:8080`. Через 5 секунд после запуска планировщик сам обходит стартовые ссылки (8 книг Лабиринта и book24), поэтому `GET /answer` почти сразу возвращает данные, даже если ничего не отправлять.
 
 ### Проверка
 
@@ -128,6 +128,17 @@ GET http://localhost:8080/api/file-results?limit=20
 2026-10-29 18:40:01.902 [pool-worker-1] Готово https://www.labirint.ru/books/1011055/: ..., 899 RUB
 ```
 
+7. Планировщик: состояние и запуск обхода вне расписания:
+
+```
+GET  http://localhost:8080/api/scheduler
+POST http://localhost:8080/api/scheduler/run
+```
+
+```json
+{ "enabled": true, "intervalMinutes": 10, "runs": 1, "lastRunAt": "2026-10-30T13:05:12Z", "lastTaskId": "5eda3315-...", "lastTaskStatus": "DONE" }
+```
+
 Другие ссылки для проверки:
 
 - `https://www.labirint.ru/books/1032572/` - ещё одна книга Лабиринта
@@ -175,7 +186,9 @@ GET http://localhost:8080/api/file-results?limit=20
 
 Хранение в файле: `ResultFileStorage` дописывает каждый товар строкой JSON в `data/results.jsonl`. Доступ к файлу защищён `ReentrantReadWriteLock`: читать можно одновременно, писать - по одному.
 
-Настройки в `application.yml`: `parser.pool-threads`, `parser.pool-queue-size`, `parser.max-requests-per-site`, `parser.event-log-file`, `parser.results-file`.
+Планировщик: `PriceRefreshScheduler` работает на `ScheduledExecutorService` с одним потоком-демоном `price-scheduler`. Через `scheduleWithFixedDelay` он раз в 10 минут запускает обход всех известных ссылок фоновой задачей в общем пуле. Если прошлый обход ещё не закончился, новый не запускается. Исключения внутри перехватываются: иначе `ScheduledExecutorService` молча отменил бы все следующие запуски.
+
+Настройки в `application.yml`: `parser.scheduler.*`, `parser.pool-threads`, `parser.pool-queue-size`, `parser.max-requests-per-site`, `parser.event-log-file`, `parser.results-file`.
 
 ### Тесты
 
@@ -183,7 +196,7 @@ GET http://localhost:8080/api/file-results?limit=20
 ./mvnw test
 ```
 
-Тесты не ходят в интернет: парсер проверяется на кусках разметки Лабиринта и book24, а в тестах контроллера и параллельной обработки загрузка страниц заменена заглушкой. Тест `BatchParseServiceTest` проверяет, что ссылки обработали разные потоки и что это быстрее, чем по очереди. `TaskServiceTest` проверяет фоновую задачу в пуле, `HostLimiterTest` - что к одному сайту не уходит больше двух запросов сразу, `ResultFileStorageTest` - что 8 потоков пишут в файл одновременно и ни одна строка не теряется.
+Тесты не ходят в интернет: парсер проверяется на кусках разметки Лабиринта и book24, а в тестах контроллера и параллельной обработки загрузка страниц заменена заглушкой. Тест `BatchParseServiceTest` проверяет, что ссылки обработали разные потоки и что это быстрее, чем по очереди. `TaskServiceTest` проверяет фоновую задачу в пуле, `HostLimiterTest` - что к одному сайту не уходит больше двух запросов сразу, `ResultFileStorageTest` - что 8 потоков пишут в файл одновременно и ни одна строка не теряется, `PriceRefreshSchedulerTest` - запуск по расписанию и пропуск обхода, пока идёт прошлый.
 
 ### Структура
 
