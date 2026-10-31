@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 public class ProductController {
@@ -44,6 +45,18 @@ public class ProductController {
     @GetMapping("/answer")
     public List<Product> answer() {
         return parseService.getAll();
+    }
+
+    /**
+     * История цены по одной ссылке: каждый обход, от старых к новым.
+     */
+    @GetMapping("/answer/history")
+    public List<Product> history(@RequestParam String url) {
+        List<Product> history = parseService.getHistory(url);
+        if (history.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "По этой ссылке ещё нет данных");
+        }
+        return history;
     }
 
     /**

@@ -10,6 +10,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findAllByOrderByParsedAtDesc();
 
+    // все обходы одной ссылки, от старых к новым - это история цены
+    List<Product> findByUrlOrderByParsedAtAsc(String url);
+
     @Query("select distinct p.url from Product p")
     List<String> findAllUrls();
 }
