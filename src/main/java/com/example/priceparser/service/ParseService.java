@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.example.priceparser.model.Product;
 import com.example.priceparser.parser.ProductPageParser;
+import com.example.priceparser.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,15 +13,15 @@ public class ParseService {
 
     private final PageLoader pageLoader;
     private final ProductPageParser parser;
-    private final ProductStorage storage;
+    private final ProductRepository repository;
     private final ResultFileStorage fileStorage;
     private final EventLog eventLog;
 
-    public ParseService(PageLoader pageLoader, ProductPageParser parser, ProductStorage storage,
+    public ParseService(PageLoader pageLoader, ProductPageParser parser, ProductRepository repository,
                         ResultFileStorage fileStorage, EventLog eventLog) {
         this.pageLoader = pageLoader;
         this.parser = parser;
-        this.storage = storage;
+        this.repository = repository;
         this.fileStorage = fileStorage;
         this.eventLog = eventLog;
     }
@@ -53,12 +54,12 @@ public class ParseService {
         product.setParsedAt(Instant.now());
         // видно, какой поток обработал ссылку
         product.setThreadName(Thread.currentThread().getName());
-        storage.save(product);
-        fileStorage.append(product);
-        return product;
+        Product saved = repository.save(product);
+        fileStorage.append(saved);
+        return saved;
     }
 
     public List<Product> getAll() {
-        return storage.findAll();
+        return repository.findAllByOrderByParsedAtDesc();
     }
 }

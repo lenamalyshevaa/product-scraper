@@ -2,6 +2,7 @@ package com.example.priceparser.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -13,6 +14,7 @@ import java.util.Set;
 import com.example.priceparser.model.BatchResult;
 import com.example.priceparser.model.Product;
 import com.example.priceparser.parser.ProductPageParser;
+import com.example.priceparser.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -50,8 +52,11 @@ class BatchParseServiceTest {
         ProductPageParser parser = new ProductPageParser();
         ReflectionTestUtils.setField(parser, "catalogLinkSelector", "a.cover[href*=/books/]");
 
+        ProductRepository repository = mock(ProductRepository.class);
+        when(repository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
         EventLog eventLog = mock(EventLog.class);
-        ParseService parseService = new ParseService(pageLoader, parser, new ProductStorage(),
+        ParseService parseService = new ParseService(pageLoader, parser, repository,
                 mock(ResultFileStorage.class), eventLog);
         batchParseService = new BatchParseService(parseService, eventLog);
         ReflectionTestUtils.setField(batchParseService, "threadCount", 4);

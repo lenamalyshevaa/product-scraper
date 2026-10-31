@@ -9,11 +9,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Instant;
 import java.util.List;
 
 import com.example.priceparser.model.ParseTask;
-import com.example.priceparser.model.Product;
+import com.example.priceparser.repository.ProductRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,14 +22,14 @@ import org.springframework.test.util.ReflectionTestUtils;
 class PriceRefreshSchedulerTest {
 
     private TaskService taskService;
-    private ProductStorage storage;
+    private ProductRepository repository;
     private PriceRefreshScheduler scheduler;
 
     @BeforeEach
     void setUp() {
         taskService = mock(TaskService.class);
-        storage = new ProductStorage();
-        scheduler = new PriceRefreshScheduler(taskService, storage, mock(EventLog.class));
+        repository = mock(ProductRepository.class);
+        scheduler = new PriceRefreshScheduler(taskService, repository, mock(EventLog.class));
         ReflectionTestUtils.setField(scheduler, "seedUrls", new String[] {"https://www.labirint.ru/books/1/"});
     }
 
@@ -41,15 +40,9 @@ class PriceRefreshSchedulerTest {
 
     @Test
     void runTakesSeedUrlsAndKnownProducts() {
-        Product known = new Product();
-        known.setUrl("https://www.labirint.ru/books/2/");
-        known.setParsedAt(Instant.now());
-        storage.save(known);
-        // та же ссылка, что и в стартовых, - не должна задвоиться
-        Product duplicate = new Product();
-        duplicate.setUrl("https://www.labirint.ru/books/1/");
-        duplicate.setParsedAt(Instant.now());
-        storage.save(duplicate);
+        // книга 1 есть и в стартовых ссылках, и в базе - не должна задвоиться
+        when(repository.findAllUrls()).thenReturn(List.of(
+                "https://www.labirint.ru/books/2/", "https://www.labirint.ru/books/1/"));
         when(taskService.createTask(anyList())).thenReturn(new ParseTask("t1", 2));
 
         scheduler.runNow();

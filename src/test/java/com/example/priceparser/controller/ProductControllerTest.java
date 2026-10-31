@@ -22,7 +22,8 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest(properties = {
         "parser.results-file=target/test-data/results.jsonl",
         "parser.event-log-file=target/test-data/parser-events.log",
-        "parser.scheduler.enabled=false"
+        "parser.scheduler.enabled=false",
+        "spring.datasource.url=jdbc:h2:mem:controller-test"
 })
 @AutoConfigureMockMvc
 class ProductControllerTest {

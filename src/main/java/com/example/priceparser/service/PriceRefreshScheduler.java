@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.example.priceparser.model.ParseTask;
+import com.example.priceparser.repository.ProductRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +27,7 @@ import org.springframework.stereotype.Component;
 public class PriceRefreshScheduler {
 
     private final TaskService taskService;
-    private final ProductStorage storage;
+    private final ProductRepository repository;
     private final EventLog eventLog;
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
@@ -52,9 +53,9 @@ public class PriceRefreshScheduler {
     @Value("${parser.scheduler.seed-urls}")
     private String[] seedUrls;
 
-    public PriceRefreshScheduler(TaskService taskService, ProductStorage storage, EventLog eventLog) {
+    public PriceRefreshScheduler(TaskService taskService, ProductRepository repository, EventLog eventLog) {
         this.taskService = taskService;
-        this.storage = storage;
+        this.repository = repository;
         this.eventLog = eventLog;
     }
 
@@ -93,7 +94,7 @@ public class PriceRefreshScheduler {
                 urls.add(url.trim());
             }
         }
-        urls.addAll(storage.findAllUrls());
+        urls.addAll(repository.findAllUrls());
         if (urls.isEmpty()) {
             eventLog.log("Обновлять нечего: ещё нет ни одного товара");
             return null;

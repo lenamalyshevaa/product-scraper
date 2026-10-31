@@ -4,6 +4,20 @@ server:
 spring:
   application:
     name: product-scraper
+  # встроенная база H2, хранится в файле data/productdb.mv.db
+  datasource:
+    url: jdbc:h2:file:./data/productdb;AUTO_SERVER=TRUE
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  # веб-консоль базы: http://localhost:8080/h2-console
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
 
 parser:
   timeout-seconds: 15
