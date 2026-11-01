@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.example.priceparser.model.AnswerFilter;
 import com.example.priceparser.model.BatchResult;
+import com.example.priceparser.model.PageResponse;
 import com.example.priceparser.model.Product;
 import com.example.priceparser.service.AnswerService;
 import com.example.priceparser.service.BatchParseService;
@@ -47,10 +48,11 @@ public class ProductController {
     }
 
     /**
-     * Результаты из H2 с фильтрами, например /answer?q=дракула&maxPrice=1000&site=labirint
+     * Результаты из H2 с фильтрами, сортировкой и страницами,
+     * например /answer?q=дракула&maxPrice=1000&sort=price&order=asc&page=0&size=10
      */
     @GetMapping("/answer")
-    public List<Product> answer(AnswerFilter filter) {
+    public PageResponse answer(AnswerFilter filter) {
         return answerService.find(filter);
     }
 

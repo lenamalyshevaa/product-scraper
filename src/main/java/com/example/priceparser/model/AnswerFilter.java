@@ -17,6 +17,13 @@ public class AnswerFilter {
     // true - только последний обход каждой ссылки, false - вся история
     private boolean latestOnly = true;
 
+    // сортировка: parsedAt, price, title, publishedAt; порядок: asc или desc
+    private String sort = "parsedAt";
+    private String order = "desc";
+    // номер страницы с нуля и размер страницы
+    private int page = 0;
+    private int size = 20;
+
     public String getQ() {
         return q;
     }
@@ -63,5 +70,37 @@ public class AnswerFilter {
 
     public void setLatestOnly(boolean latestOnly) {
         this.latestOnly = latestOnly;
+    }
+
+    public String getSort() {
+        return sort;
+    }
+
+    public void setSort(String sort) {
+        this.sort = sort;
+    }
+
+    public String getOrder() {
+        return order;
+    }
+
+    public void setOrder(String order) {
+        this.order = order;
+    }
+
+    public int getPage() {
+        return page;
+    }
+
+    public void setPage(int page) {
+        this.page = page;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
     }
 }

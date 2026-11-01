@@ -52,7 +52,14 @@ class ProductControllerTest {
 
         mockMvc.perform(get("/answer"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].title").value("Волосы Вероники"));
+                .andExpect(jsonPath("$.content[0].title").value("Волосы Вероники"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    void wrongSortReturns400() throws Exception {
+        mockMvc.perform(get("/answer").param("sort", "color"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

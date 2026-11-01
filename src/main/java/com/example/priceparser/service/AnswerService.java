@@ -1,11 +1,13 @@
 package com.example.priceparser.service;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import com.example.priceparser.model.AnswerFilter;
+import com.example.priceparser.model.PageResponse;
 import com.example.priceparser.model.Product;
 import com.example.priceparser.repository.ProductRepository;
 import org.springframework.stereotype.Service;
@@ -24,7 +26,15 @@ public class AnswerService {
         this.repository = repository;
     }
 
-    public List<Product> find(AnswerFilter filter) {
+    public PageResponse find(AnswerFilter filter) {
+        if (filter.getPage() < 0) {
+            throw new IllegalArgumentException("page не может быть меньше 0");
+        }
+        if (filter.getSize() < 1 || filter.getSize() > 100) {
+            throw new IllegalArgumentException("size должен быть от 1 до 100");
+        }
+        Comparator<Product> comparator = buildComparator(filter.getSort(), filter.getOrder());
+
         List<Product> all = repository.findAll();
 
         Collection<Product> source = all;
@@ -32,9 +42,43 @@ public class AnswerService {
             source = latestByUrl(all);
         }
 
-        return source.parallelStream()
+        // sorted() в параллельном стриме сортирует части в разных потоках и потом сливает их,
+        // toList() сохраняет получившийся порядок
+        List<Product> sorted = source.parallelStream()
                 .filter(product -> matches(product, filter))
-                .collect(Collectors.toList());
+                .sorted(comparator)
+                .toList();
+
+        int from = Math.min(filter.getPage() * filter.getSize(), sorted.size());
+        int to = Math.min(from + filter.getSize(), sorted.size());
+        List<Product> pageContent = sorted.subList(from, to);
+
+        return new PageResponse(pageContent, filter.getPage(), filter.getSize(), sorted.size(),
+                filter.getSort(), filter.getOrder());
+    }
+
+    private Comparator<Product> buildComparator(String sort, String order) {
+        Comparator<Product> comparator;
+        switch (sort) {
+            case "price" -> comparator = Comparator.comparing(Product::getPrice,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+            case "title" -> comparator = Comparator.comparing(Product::getTitle,
+                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+            case "publishedAt" -> comparator = Comparator.comparing(Product::getPublishedAt,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+            case "parsedAt" -> comparator = Comparator.comparing(Product::getParsedAt,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+            default -> throw new IllegalArgumentException(
+                    "sort может быть только parsedAt, price, title или publishedAt");
+        }
+
+        if ("desc".equalsIgnoreCase(order)) {
+            comparator = comparator.reversed();
+        } else if (!"asc".equalsIgnoreCase(order)) {
+            throw new IllegalArgumentException("order может быть только asc или desc");
+        }
+        // при равных значениях порядок по id, чтобы страницы не перемешивались
+        return comparator.thenComparing(Product::getId, Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
     /**
