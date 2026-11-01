@@ -2,8 +2,10 @@ package com.example.priceparser.controller;
 
 import java.util.List;
 
+import com.example.priceparser.model.AnswerFilter;
 import com.example.priceparser.model.BatchResult;
 import com.example.priceparser.model.Product;
+import com.example.priceparser.service.AnswerService;
 import com.example.priceparser.service.BatchParseService;
 import com.example.priceparser.service.ParseService;
 import com.example.priceparser.service.ResultFileStorage;
@@ -23,12 +25,14 @@ public class ProductController {
     private final ParseService parseService;
     private final BatchParseService batchParseService;
     private final ResultFileStorage fileStorage;
+    private final AnswerService answerService;
 
     public ProductController(ParseService parseService, BatchParseService batchParseService,
-                             ResultFileStorage fileStorage) {
+                             ResultFileStorage fileStorage, AnswerService answerService) {
         this.parseService = parseService;
         this.batchParseService = batchParseService;
         this.fileStorage = fileStorage;
+        this.answerService = answerService;
     }
 
     @PostMapping("/api/parse")
@@ -42,9 +46,12 @@ public class ProductController {
         return batchParseService.parseAll(request.getUrls());
     }
 
+    /**
+     * Результаты из H2 с фильтрами, например /answer?q=дракула&maxPrice=1000&site=labirint
+     */
     @GetMapping("/answer")
-    public List<Product> answer() {
-        return parseService.getAll();
+    public List<Product> answer(AnswerFilter filter) {
+        return answerService.find(filter);
     }
 
     /**

@@ -59,10 +59,6 @@ public class ParseService {
         return saved;
     }
 
-    public List<Product> getAll() {
-        return repository.findAllByOrderByParsedAtDesc();
-    }
-
     public List<Product> getHistory(String url) {
         return repository.findByUrlOrderByParsedAtAsc(url);
     }
