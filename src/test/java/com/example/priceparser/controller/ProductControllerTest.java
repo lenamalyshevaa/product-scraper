@@ -59,7 +59,29 @@ class ProductControllerTest {
     @Test
     void wrongSortReturns400() throws Exception {
         mockMvc.perform(get("/answer").param("sort", "color"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("sort может быть только parsedAt, price, title или publishedAt"));
+    }
+
+    @Test
+    void wrongPriceReturns400() throws Exception {
+        mockMvc.perform(get("/answer").param("minPrice", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Неверное значение параметра minPrice: abc"));
+    }
+
+    @Test
+    void historyWithoutUrlReturns400() throws Exception {
+        mockMvc.perform(get("/answer/history"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Не указан параметр url"));
+    }
+
+    @Test
+    void unknownTaskReturns404() throws Exception {
+        mockMvc.perform(get("/api/tasks/no-such-id"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Задача не найдена"));
     }
 
     @Test
