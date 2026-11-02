@@ -1,6 +1,6 @@
 ### Product Scraper
 
-Сервис на Spring Boot, который собирает данные о товарах по ссылкам: название, краткое описание, цену, валюту, наличие и дату публикации. Может использоваться как агрегатор цен.
+Многопоточный сервис на Spring Boot, который собирает данные о товарах по ссылкам: название, краткое описание, цену, валюту, наличие и дату публикации. Повторно обходит ссылки по расписанию и хранит историю цен, поэтому может использоваться как агрегатор цен.
 
 Автор: Малышева Елена Алексеевна
 
@@ -8,7 +8,7 @@
 
 ### Запуск
 
-Нужна JDK 17 или новее. Maven ставить не нужно, в проекте есть Maven Wrapper.
+Нужна JDK 17 или новее. Maven, база данных и другие программы не нужны: Maven Wrapper лежит в проекте, база H2 встроена в приложение.
 
 IntelliJ IDEA: открыть папку проекта, открыть класс `PriceParserApplication` и нажать зелёный треугольник рядом с ним.
 
@@ -19,142 +19,199 @@ IntelliJ IDEA: открыть папку проекта, открыть клас
 mvnw.cmd spring-boot:run      # Windows
 ```
 
-Сервис запускается на `http://localhost:8080`. Через 5 секунд после запуска планировщик сам обходит стартовые ссылки (8 книг Лабиринта и book24), поэтому `GET /answer` почти сразу возвращает данные, даже если ничего не отправлять.
+Сервис запускается на `http://localhost:8080`. Через 5 секунд после запуска планировщик сам обходит 8 стартовых ссылок (книги Лабиринта и book24) и дальше повторяет обход каждые 10 минут.
 
-### Проверка
+### Быстрая проверка
 
-Запросы можно отправить через curl (терминал в IDEA) или Postman. Для Postman есть готовая коллекция: `postman/product-scraper.postman_collection.json` (File - Import).
+Запросы можно отправлять через curl (терминал в IDEA), Postman или браузер (для GET). Для Postman есть готовая коллекция `postman/product-scraper.postman_collection.json` (File - Import).
 
-1. Отправить ссылку на книгу:
+1. Запустить приложение и подождать 10-15 секунд.
+
+2. Открыть в браузере результаты, которые собрал планировщик:
+
+```
+GET http://localhost:8080/answer
+```
+
+```json
+{
+  "content": [
+    {
+      "id": 8,
+      "url": "https://www.labirint.ru/books/982366/",
+      "title": "Волосы Вероники: Фрэнсис Фицджеральд",
+      "description": "Один из крупнейших американских прозаиков прошлого века Фрэнсис Скотт Фицджеральд (1896-1940) ...",
+      "price": 529.00,
+      "currency": "RUB",
+      "availability": "InStock",
+      "publishedAt": "2023-01-01T00:00:00Z",
+      "parsedAt": "2026-11-02T09:01:26.702Z",
+      "threadName": "pool-worker-1"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 8,
+  "totalPages": 1,
+  "sort": "parsedAt",
+  "order": "desc"
+}
+```
+
+3. Фильтры и сортировка (выполняются через `parallelStream`):
+
+```
+GET http://localhost:8080/answer?sort=price&order=asc
+GET http://localhost:8080/answer?maxPrice=1000&site=labirint
+GET http://localhost:8080/answer?q=дракула
+GET http://localhost:8080/answer?sort=title&order=asc&page=1&size=3
+```
+
+4. Отправить свою ссылку на книгу:
 
 ```bash
 curl -X POST http://localhost:8080/api/parse \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://www.labirint.ru/books/982366/"}'
+  -d '{"url": "https://www.labirint.ru/books/1032572/"}'
 ```
 
 Тело запроса:
 
 ```json
 {
-  "url": "https://www.labirint.ru/books/982366/"
+  "url": "https://www.labirint.ru/books/1032572/"
 }
 ```
 
-Ответ `201 Created`:
+Ответ `201 Created` - товар в том же формате, что и в `/answer`.
 
-```json
-{
-  "id": 1,
-  "url": "https://www.labirint.ru/books/982366/",
-  "title": "Волосы Вероники: Фрэнсис Фицджеральд",
-  "description": "Один из крупнейших американских прозаиков прошлого века Фрэнсис Скотт Фицджеральд (1896-1940) ...",
-  "price": 618,
-  "currency": "RUB",
-  "availability": "InStock",
-  "publishedAt": "2023-01-01T00:00:00Z",
-  "parsedAt": "2026-10-27T16:05:41.120Z"
-}
-```
-
-2. Получить все собранные товары (новые сверху), можно прямо в браузере:
-
-```
-GET http://localhost:8080/answer
-```
-
-3. Отправить сразу несколько ссылок, в том числе страницу каталога:
+5. Несколько ссылок и страница каталога, обработка в 4 потоках `Thread`:
 
 ```bash
 curl -X POST http://localhost:8080/api/parse/batch \
   -H "Content-Type: application/json" \
-  -d '{"urls": ["https://www.labirint.ru/genres/2529/", "https://www.labirint.ru/books/982366/", "https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/"]}'
+  -d '{"urls": ["https://www.labirint.ru/genres/2529/", "https://www.labirint.ru/books/982366/"]}'
 ```
 
-Ссылки обрабатываются параллельно в 4 потоках. Страница каталога раскрывается в ссылки на книги (не больше 20), и их тоже разбирают все потоки. Ответ:
+Страница каталога раскрывается в ссылки на книги (не больше 20). В ответе `total`, `success`, `failed`, `timeMs`, список `products` и `errors`; в поле `threadName` у каждого товара видно, какой поток его обработал.
 
-```json
-{
-  "total": 22,
-  "success": 22,
-  "failed": 0,
-  "timeMs": 7169,
-  "products": [
-    { "title": "Волосы Вероники: Фрэнсис Фицджеральд", "price": 618, "threadName": "batch-worker-4", "...": "..." }
-  ],
-  "errors": []
-}
-```
-
-В поле `threadName` видно, какой поток обработал ссылку. Если одна ссылка не открылась, она попадает в `errors`, а остальные обрабатываются дальше.
-
-4. Фоновая задача: ответ приходит сразу, ссылки обрабатываются в пуле потоков:
+6. Фоновая задача в пуле потоков: ответ `202 Accepted` приходит сразу, с `id` задачи:
 
 ```bash
 curl -X POST http://localhost:8080/api/tasks \
   -H "Content-Type: application/json" \
-  -d '{"urls": ["https://www.labirint.ru/books/982366/", "https://www.labirint.ru/books/1032572/", "https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/"]}'
+  -d '{"urls": ["https://www.labirint.ru/books/1024699/", "https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/"]}'
 ```
-
-Ответ `202 Accepted` с `id` и `"status": "IN_PROGRESS"`. Статус задачи (с `wait=30` запрос подождёт окончания до 30 секунд):
 
 ```
 GET http://localhost:8080/api/tasks/{id}?wait=30
 ```
 
-Когда всё готово, `status` становится `DONE`, в `products` лежат товары, в `errors` - ссылки, которые не удалось разобрать.
+С `wait=30` запрос ждёт окончания задачи до 30 секунд. Когда всё готово, `status` становится `DONE`.
 
-5. Состояние пула потоков:
-
-```
-GET http://localhost:8080/api/pool
-```
-
-```json
-{ "poolSize": 6, "activeThreads": 6, "queueSize": 3, "completedTasks": 0, "tasksCreated": 1 }
-```
-
-6. Результаты из файла `data/results.jsonl` (сохраняются и после перезапуска):
+7. История цены по одной ссылке (каждый обход планировщика добавляет запись):
 
 ```
-GET http://localhost:8080/api/file-results?limit=20
+GET http://localhost:8080/answer/history?url=https://www.labirint.ru/books/982366/
 ```
 
-Журнал событий пишется в `logs/parser-events.log`:
-
-```
-2026-10-29 18:40:00.755 [http-nio-8080-exec-2] Задача c232f222-...: 9 ссылок
-2026-10-29 18:40:00.755 [pool-worker-1] Загрузка https://www.labirint.ru/books/1011055/
-2026-10-29 18:40:01.902 [pool-worker-1] Готово https://www.labirint.ru/books/1011055/: ..., 899 RUB
-```
-
-7. Планировщик: состояние и запуск обхода вне расписания:
+8. Планировщик и пул потоков:
 
 ```
 GET  http://localhost:8080/api/scheduler
 POST http://localhost:8080/api/scheduler/run
+GET  http://localhost:8080/api/pool
 ```
 
-```json
-{ "enabled": true, "intervalMinutes": 10, "runs": 1, "lastRunAt": "2026-10-30T13:05:12Z", "lastTaskId": "5eda3315-...", "lastTaskStatus": "DONE" }
-```
+9. Результаты из файла, журнал событий и база:
 
-Другие ссылки для проверки:
+- `GET http://localhost:8080/api/file-results?limit=20` - последние записи из `data/results.jsonl`;
+- `logs/parser-events.log` - журнал событий, видно, какой поток что делал;
+- `http://localhost:8080/h2-console` - консоль базы: JDBC URL `jdbc:h2:file:./data/productdb;AUTO_SERVER=TRUE`, пользователь `sa`, пароль пустой, таблица `PRODUCTS`.
 
-- `https://www.labirint.ru/books/1032572/` - ещё одна книга Лабиринта
-- `https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/` - книга из book24
-- `https://www.labirint.ru/genres/2529/` - страница каталога, вернёт ошибку 422
+Цены в магазине меняются, поэтому суммы могут отличаться от примеров. Если книга пропала из продажи, подойдёт любая ссылка вида `https://www.labirint.ru/books/<номер>/`.
 
-Цены в магазине меняются, поэтому сумма может отличаться от примера. Если книга пропала из продажи, подойдёт любая ссылка вида `https://www.labirint.ru/books/<номер>/`.
+### Эндпоинты
+
+| Метод | Адрес | Что делает |
+|-------|-------|------------|
+| GET | `/answer` | результаты из H2 с фильтрами, сортировкой и страницами |
+| GET | `/answer/history?url=` | история цены по ссылке |
+| POST | `/api/parse` | обработать одну ссылку |
+| POST | `/api/parse/batch` | обработать список ссылок в нескольких потоках |
+| POST | `/api/tasks` | создать фоновую задачу |
+| GET | `/api/tasks/{id}?wait=` | статус фоновой задачи |
+| GET | `/api/pool` | состояние пула потоков |
+| GET | `/api/scheduler` | состояние планировщика |
+| POST | `/api/scheduler/run` | запустить обход вне расписания |
+| GET | `/api/file-results?limit=` | результаты из файла |
+
+### Параметры /answer
+
+| Параметр | По умолчанию | Описание |
+|----------|--------------|----------|
+| `q` | | поиск по названию и описанию без учёта регистра |
+| `minPrice`, `maxPrice` | | диапазон цены |
+| `currency` | | валюта, например `RUB` |
+| `site` | | часть адреса сайта: `labirint`, `book24` |
+| `latestOnly` | `true` | `true` - последний обход каждой ссылки, `false` - вся история |
+| `sort` | `parsedAt` | `parsedAt`, `price`, `title`, `publishedAt` |
+| `order` | `desc` | `asc` или `desc` |
+| `page` | `0` | номер страницы с нуля |
+| `size` | `20` | размер страницы, от 1 до 100 |
 
 ### Ошибки
 
+Все ошибки приходят в одном формате: `{"timestamp", "status", "error", "message"}`.
+
 | Код | Когда |
 |-----|-------|
-| 400 | в `url` не ссылка или в ней есть пробелы, пустой список `urls` или больше 50 ссылок |
+| 400 | неверная ссылка, пустой список `urls` или больше 50 ссылок, неверный параметр `/answer` |
+| 404 | задача не найдена или по ссылке нет истории |
 | 422 | на странице нет цены или это страница каталога |
-| 404 | задача с таким `id` не найдена |
 | 502 | страницу не удалось загрузить |
+
+### Что где реализовано
+
+| Что | Где |
+|-----|-----|
+| Spring Boot, MVC, unit-тесты | `controller`, `service`, `src/test` |
+| Простые потоки `Thread` и `Runnable` | `BatchParseService`, `ParseWorker` |
+| Собственный `ExecutorService` | `ExecutorConfig` - `ThreadPoolExecutor` на 6 потоков с очередью `ArrayBlockingQueue` |
+| Запуск по расписанию | `PriceRefreshScheduler` - `ScheduledExecutorService`, `scheduleWithFixedDelay` |
+| Блокирующие структуры | `LinkedBlockingQueue` в журнале событий, `ArrayBlockingQueue` в пуле |
+| Примитивы синхронизации | `Semaphore` (`HostLimiter`), `CountDownLatch` (`ParseTask`), `ReentrantReadWriteLock` (`ResultFileStorage`), `synchronized` |
+| Хранение в своём файле | `ResultFileStorage` - `data/results.jsonl` |
+| Поток-демон для логирования | `EventLog` - поток `event-log-writer` пишет `logs/parser-events.log` |
+| Встроенная база H2 | `Product` (`@Entity`), `ProductRepository`, файл `data/productdb.mv.db` |
+| Фильтрация и сортировка через parallel stream | `AnswerService` |
+| Межсервисное взаимодействие | `PageLoader` - `WebClient` из WebFlux |
+| Потокобезопасные структуры | `ConcurrentHashMap`, `ConcurrentLinkedQueue`, `Collections.synchronizedList`, `AtomicInteger` |
+
+### Как устроена многопоточность
+
+Пакетная обработка `/api/parse/batch`: `BatchParseService` создаёт 4 потока `Thread`, каждому даёт задачу `ParseWorker` (`Runnable`) и ждёт их через `join()`.
+
+- ссылки лежат в общей очереди `ConcurrentLinkedQueue`, каждый поток забирает следующую через `poll()`;
+- результаты и ошибки собираются в `Collections.synchronizedList`;
+- уже встреченные ссылки хранятся в `ConcurrentHashMap.newKeySet()`, чтобы одна книга не обрабатывалась дважды;
+- счётчик `AtomicInteger` считает необработанные ссылки: поток не завершается, пока другой поток может добавить в очередь ссылки из каталога.
+
+Фоновые задачи `/api/tasks`:
+
+- `ExecutorConfig` создаёт свой `ThreadPoolExecutor` на 6 потоков `pool-worker-N` с ограниченной очередью `ArrayBlockingQueue` на 100 задач; если очередь заполнена, задачу выполняет поток, который её отправил (`CallerRunsPolicy`);
+- каждая ссылка - отдельная задача в пуле; задачи хранятся в `ConcurrentHashMap`;
+- у задачи есть `CountDownLatch` на число ссылок: каждая обработанная ссылка делает `countDown()`, а запрос с `wait` ждёт через `await()`; счётчики успехов и ошибок - `AtomicInteger`.
+
+Планировщик: `PriceRefreshScheduler` работает на `ScheduledExecutorService` с одним потоком-демоном `price-scheduler`. Через `scheduleWithFixedDelay` он раз в 10 минут запускает обход стартовых ссылок и всех ссылок из базы фоновой задачей в общем пуле. Если прошлый обход ещё не закончился, новый не запускается. Исключения внутри перехватываются: иначе `ScheduledExecutorService` молча отменил бы все следующие запуски.
+
+Ограничение запросов к сайту: `HostLimiter` держит свой `Semaphore` для каждого сайта. К одному сайту одновременно уходит не больше 3 запросов, остальные потоки ждут. Разные сайты друг другу не мешают.
+
+Журнал событий: `EventLog` - потоки кладут строки в `LinkedBlockingQueue`, а отдельный поток-демон `event-log-writer` забирает их через `take()` и пишет в файл. Парсинг не ждёт записи на диск.
+
+Хранение в файле: `ResultFileStorage` дописывает каждый товар строкой JSON в `data/results.jsonl`. Доступ к файлу защищён `ReentrantReadWriteLock`: читать можно одновременно, писать - по одному.
+
+Выборка `/answer`: `AnswerService` берёт все записи из H2 и обрабатывает их через `parallelStream()`. Сначала `Collectors.toConcurrentMap` оставляет для каждой ссылки последний обход, потом `filter()` применяет фильтры, `sorted()` сортирует, и из результата вырезается нужная страница.
 
 ### Откуда берутся данные
 
@@ -163,32 +220,19 @@ POST http://localhost:8080/api/scheduler/run
 - описание - блок "Аннотация" (Лабиринт) или `itemprop="description"` (book24), обрезается до 500 символов;
 - дата публикации - `itemprop="datePublished"`; у Лабиринта точной даты нет, поэтому берётся год издания из характеристик; если нет и его - заголовок ответа `Last-Modified`.
 
-### Как устроена многопоточность
+### Настройки
 
-`BatchParseService` создаёт 4 потока `Thread`, каждому даёт задачу `ParseWorker` (`Runnable`) и ждёт их через `join()`.
+Все настройки в `src/main/resources/application.yml`, блок `parser`:
 
-- ссылки лежат в общей очереди `ConcurrentLinkedQueue`, каждый поток забирает следующую через `poll()`;
-- результаты и ошибки собираются в `Collections.synchronizedList`;
-- уже встреченные ссылки хранятся в `ConcurrentHashMap.newKeySet()`, чтобы одна книга не обрабатывалась дважды;
-- счётчик `AtomicInteger` считает необработанные ссылки: поток не завершается, пока другой поток может добавить в очередь ссылки из каталога.
-
-Число потоков и лимит книг с каталога задаются в `application.yml` (`parser.batch-threads`, `parser.catalog-max-products`).
-
-Фоновые задачи `/api/tasks`:
-
-- `ExecutorConfig` создаёт свой `ThreadPoolExecutor` на 6 потоков `pool-worker-N` с ограниченной очередью `ArrayBlockingQueue` на 100 задач; если очередь заполнена, задачу выполняет поток, который её отправил (`CallerRunsPolicy`);
-- каждая ссылка - отдельная задача в пуле; задачи хранятся в `ConcurrentHashMap`;
-- у задачи есть `CountDownLatch` на число ссылок: каждая обработанная ссылка делает `countDown()`, а запрос с `wait` ждёт через `await()`; счётчики успехов и ошибок - `AtomicInteger`.
-
-Ограничение запросов к сайту: `HostLimiter` держит свой `Semaphore` для каждого сайта. К одному сайту одновременно уходит не больше 3 запросов, остальные потоки ждут. Разные сайты друг другу не мешают.
-
-Журнал событий: `EventLog` - потоки кладут строки в `LinkedBlockingQueue`, а отдельный поток-демон `event-log-writer` забирает их через `take()` и пишет в файл. Парсинг не ждёт записи на диск.
-
-Хранение в файле: `ResultFileStorage` дописывает каждый товар строкой JSON в `data/results.jsonl`. Доступ к файлу защищён `ReentrantReadWriteLock`: читать можно одновременно, писать - по одному.
-
-Планировщик: `PriceRefreshScheduler` работает на `ScheduledExecutorService` с одним потоком-демоном `price-scheduler`. Через `scheduleWithFixedDelay` он раз в 10 минут запускает обход всех известных ссылок фоновой задачей в общем пуле. Если прошлый обход ещё не закончился, новый не запускается. Исключения внутри перехватываются: иначе `ScheduledExecutorService` молча отменил бы все следующие запуски.
-
-Настройки в `application.yml`: `parser.scheduler.*`, `parser.pool-threads`, `parser.pool-queue-size`, `parser.max-requests-per-site`, `parser.event-log-file`, `parser.results-file`.
+| Параметр | Значение | Что задаёт |
+|----------|----------|------------|
+| `batch-threads` | 4 | потоки для `/api/parse/batch` |
+| `pool-threads`, `pool-queue-size` | 6, 100 | пул для фоновых задач |
+| `max-requests-per-site` | 3 | одновременные запросы к одному сайту |
+| `catalog-max-products` | 20 | сколько книг брать с одной страницы каталога |
+| `scheduler.interval-minutes` | 10 | период повторного обхода |
+| `scheduler.seed-urls` | 8 ссылок | стартовые ссылки |
+| `results-file`, `event-log-file` | | файлы результатов и журнала |
 
 ### Тесты
 
@@ -196,15 +240,26 @@ POST http://localhost:8080/api/scheduler/run
 ./mvnw test
 ```
 
-Тесты не ходят в интернет: парсер проверяется на кусках разметки Лабиринта и book24, а в тестах контроллера и параллельной обработки загрузка страниц заменена заглушкой. Тест `BatchParseServiceTest` проверяет, что ссылки обработали разные потоки и что это быстрее, чем по очереди. `TaskServiceTest` проверяет фоновую задачу в пуле, `HostLimiterTest` - что к одному сайту не уходит больше двух запросов сразу, `ResultFileStorageTest` - что 8 потоков пишут в файл одновременно и ни одна строка не теряется, `PriceRefreshSchedulerTest` - запуск по расписанию и пропуск обхода, пока идёт прошлый.
+Тесты не ходят в интернет: парсер проверяется на кусках разметки Лабиринта и book24, а в остальных тестах загрузка страниц заменена заглушкой.
+
+- `PriceExtractorTest`, `ProductPageParserTest` - извлечение цены и разбор страниц;
+- `BatchParseServiceTest` - ссылки обрабатывают разные потоки, и это быстрее, чем по очереди;
+- `TaskServiceTest` - фоновая задача в пуле;
+- `HostLimiterTest` - к одному сайту не уходит больше двух запросов сразу;
+- `ResultFileStorageTest` - 8 потоков пишут в файл одновременно, ни одна строка не теряется;
+- `PriceRefreshSchedulerTest` - запуск по расписанию и пропуск обхода, пока идёт прошлый;
+- `ProductRepositoryTest` - запросы к H2;
+- `AnswerServiceTest` - фильтры, сортировка и страницы;
+- `ProductControllerTest` - эндпоинты и формат ошибок.
 
 ### Структура
 
 ```
 src/main/java/com/example/priceparser
-├── config       настройка WebClient и пула потоков
-├── controller   REST-контроллер и обработка ошибок
-├── model        товар, результат пакета, фоновая задача
+├── config       WebClient и пул потоков
+├── controller   REST-контроллеры и обработка ошибок
+├── model        товар, фильтр, страница, фоновая задача
 ├── parser       разбор HTML и извлечение цены
-└── service      загрузка страниц, обработка ссылок, потоки, хранение, журнал
+├── repository   доступ к H2
+└── service      загрузка страниц, потоки, планировщик, выборка, файл, журнал
 ```

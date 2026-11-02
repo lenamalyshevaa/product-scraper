@@ -5,26 +5,59 @@
   },
   "item": [
     {
-      "name": "Книга в Лабиринте",
+      "name": "Результаты",
       "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"url\": \"https://www.labirint.ru/books/982366/\"\n}"
-        },
-        "url": "http://localhost:8080/api/parse"
+        "method": "GET",
+        "url": "http://localhost:8080/answer"
       }
     },
     {
-      "name": "Ещё одна книга",
+      "name": "Сортировка по цене",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8080/answer?sort=price&order=asc"
+      }
+    },
+    {
+      "name": "Фильтр: до 1000 руб, Лабиринт",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8080/answer?maxPrice=1000&site=labirint"
+      }
+    },
+    {
+      "name": "Поиск по названию",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8080/answer?q=дракула"
+      }
+    },
+    {
+      "name": "Вторая страница по 3",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8080/answer?sort=title&order=asc&page=1&size=3"
+      }
+    },
+    {
+      "name": "Вся история обходов",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8080/answer?latestOnly=false"
+      }
+    },
+    {
+      "name": "История цены по ссылке",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8080/answer/history?url=https://www.labirint.ru/books/982366/"
+      }
+    },
+    {
+      "name": "Одна книга",
       "request": {
         "method": "POST",
+        "url": "http://localhost:8080/api/parse",
         "header": [
           {
             "key": "Content-Type",
@@ -34,14 +67,14 @@
         "body": {
           "mode": "raw",
           "raw": "{\n  \"url\": \"https://www.labirint.ru/books/1032572/\"\n}"
-        },
-        "url": "http://localhost:8080/api/parse"
+        }
       }
     },
     {
       "name": "Книга из book24",
       "request": {
         "method": "POST",
+        "url": "http://localhost:8080/api/parse",
         "header": [
           {
             "key": "Content-Type",
@@ -51,14 +84,14 @@
         "body": {
           "mode": "raw",
           "raw": "{\n  \"url\": \"https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/\"\n}"
-        },
-        "url": "http://localhost:8080/api/parse"
+        }
       }
     },
     {
       "name": "Страница каталога (422)",
       "request": {
         "method": "POST",
+        "url": "http://localhost:8080/api/parse",
         "header": [
           {
             "key": "Content-Type",
@@ -68,14 +101,14 @@
         "body": {
           "mode": "raw",
           "raw": "{\n  \"url\": \"https://www.labirint.ru/genres/2529/\"\n}"
-        },
-        "url": "http://localhost:8080/api/parse"
+        }
       }
     },
     {
-      "name": "Несколько ссылок и каталог",
+      "name": "Несколько ссылок и каталог (потоки Thread)",
       "request": {
         "method": "POST",
+        "url": "http://localhost:8080/api/parse/batch",
         "header": [
           {
             "key": "Content-Type",
@@ -84,15 +117,15 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"urls\": [\n    \"https://www.labirint.ru/genres/2529/\",\n    \"https://www.labirint.ru/books/982366/\",\n    \"https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/\"\n  ]\n}"
-        },
-        "url": "http://localhost:8080/api/parse/batch"
+          "raw": "{\n  \"urls\": [\n    \"https://www.labirint.ru/genres/2529/\",\n    \"https://www.labirint.ru/books/982366/\"\n  ]\n}"
+        }
       }
     },
     {
-      "name": "Фоновая задача",
+      "name": "Фоновая задача (пул потоков)",
       "request": {
         "method": "POST",
+        "url": "http://localhost:8080/api/tasks",
         "header": [
           {
             "key": "Content-Type",
@@ -101,9 +134,8 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"urls\": [\n    \"https://www.labirint.ru/books/982366/\",\n    \"https://www.labirint.ru/books/1032572/\",\n    \"https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/\"\n  ]\n}"
-        },
-        "url": "http://localhost:8080/api/tasks"
+          "raw": "{\n  \"urls\": [\n    \"https://www.labirint.ru/books/1024699/\",\n    \"https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/\"\n  ]\n}"
+        }
       }
     },
     {
@@ -121,13 +153,6 @@
       }
     },
     {
-      "name": "Результаты из файла",
-      "request": {
-        "method": "GET",
-        "url": "http://localhost:8080/api/file-results?limit=20"
-      }
-    },
-    {
       "name": "Планировщик",
       "request": {
         "method": "GET",
@@ -142,10 +167,17 @@
       }
     },
     {
-      "name": "Все результаты",
+      "name": "Результаты из файла",
       "request": {
         "method": "GET",
-        "url": "http://localhost:8080/answer"
+        "url": "http://localhost:8080/api/file-results?limit=20"
+      }
+    },
+    {
+      "name": "Ошибка: неверная сортировка (400)",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8080/answer?sort=color"
       }
     }
   ]
