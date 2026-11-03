@@ -229,6 +229,7 @@ GET  http://localhost:8080/api/pool
 | `batch-threads` | 4 | потоки для `/api/parse/batch` |
 | `pool-threads`, `pool-queue-size` | 6, 100 | пул для фоновых задач |
 | `max-requests-per-site` | 3 | одновременные запросы к одному сайту |
+| `retry-attempts`, `retry-delay-ms` | 3, 1000 | повторы загрузки, если сайт не ответил или вернул 5xx |
 | `catalog-max-products` | 20 | сколько книг брать с одной страницы каталога |
 | `scheduler.interval-minutes` | 10 | период повторного обхода |
 | `scheduler.seed-urls` | 8 ссылок | стартовые ссылки |
@@ -246,6 +247,7 @@ GET  http://localhost:8080/api/pool
 - `BatchParseServiceTest` - ссылки обрабатывают разные потоки, и это быстрее, чем по очереди;
 - `TaskServiceTest` - фоновая задача в пуле;
 - `HostLimiterTest` - к одному сайту не уходит больше двух запросов сразу;
+- `PageLoaderTest` - повтор загрузки после ошибки 5xx и без повтора для 404 (на тестовом HTTP-сервере из JDK);
 - `ResultFileStorageTest` - 8 потоков пишут в файл одновременно, ни одна строка не теряется;
 - `PriceRefreshSchedulerTest` - запуск по расписанию и пропуск обхода, пока идёт прошлый;
 - `ProductRepositoryTest` - запросы к H2;
