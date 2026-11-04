@@ -71,7 +71,7 @@
       }
     },
     {
-      "name": "Книга из book24",
+      "name": "Ещё одна книга",
       "request": {
         "method": "POST",
         "url": "http://localhost:8080/api/parse",
@@ -83,7 +83,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"url\": \"https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/\"\n}"
+          "raw": "{\n  \"url\": \"https://www.labirint.ru/books/1023367/\"\n}"
         }
       }
     },
@@ -134,7 +134,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"urls\": [\n    \"https://www.labirint.ru/books/1024699/\",\n    \"https://book24.ru/product/novyj-god-na-zelenoj-25-8844240/\"\n  ]\n}"
+          "raw": "{\n  \"urls\": [\n    \"https://www.labirint.ru/books/1024699/\",\n    \"https://www.labirint.ru/books/1017608/\"\n  ]\n}"
         }
       }
     },
